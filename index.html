@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <link rel="stylesheet"  href= "./bootstrap.css" media="screen" >
+    <title>Chat App</title>
+    <style>
+        #messages{height:300px;width:400px;}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="row">
+            <div class="col-md-6 offset-md-3 col-sm-12" style="margin-bottom:15px 15px;">
+                <h1 class="text-center">AvvncorChat</h1>
+                <button class="btn btn-danger offset-md-3" id="clear">Clear</button>
+            </div>
+            <div id="status" class="offset-md-3" style="margin:15px 15px;">
+                <div id="chat">
+                    <input type="text" id="username" class="form-control offset-md-3" placeholder="Enter name">
+                    <div class="card offset-md-3" style="margin-top:15px;">
+                        <div class="card-block " id="messages">
+
+                        </div>
+                    </div>
+                    <br/>
+                    <textarea class="form-control offset-md-3" style="margin-top:15px;" id="textarea" placeholder="Enter your name"></textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.0.3/socket.io.js"></script>
+    <script src="./node_modules/jquery/dist/jquery.js"></script>
+    <script>
+        (function(){
+         
+            var element = function(id){
+                return document.getElementById(id);
+            }
+
+            // Get Elements with core JS
+            var statusJ = element('status');
+            var messagesJ = element('messages');
+            var textareaJ = element('textarea');
+            var usernameJ = element('username');
+            var clearBtnJ = element('clear');
+
+            //get elements with Jquery
+            var status = $('#status');
+            var messages = $('#messages');
+            var textarea = $('#textarea');
+            var username = $('#username');
+            var clear = $('#clear');
+                
+            //set default status
+            var statusDefault = status.text();
+            
+            var setStatus = function (s){
+                //set status
+                status.text() = s;
+                if(s!== statusDefault){
+                    var delay = setTimeout(function(){
+                        setStatus(statusDefault)
+                    },4000);
+                }
+            } 
+
+            var socket = io.connect('http://127.0.0.1:4000')
+            var x = 0;
+            if(socket !== undefined){
+                console.log('connected to socket...')
+
+                 // Handle Output
+                 socket.on('output', function(data){
+                    //console.log(data);
+                    
+                    if(data.length){
+                        //var y = data.length-1;
+                        for( x = 0;x < data.length;x++){
+                            var message = document.createElement('div');
+                            message.setAttribute('class', 'chat-message');
+                            
+                            message.textContent = data[x].name+": "+data[x].message;
+                            messagesJ.appendChild(message);
+                            messagesJ.insertBefore(message, messagesJ.firstChild);
+        //                     // Build out message div with Jquery        
+        // messages.append( $('<div class="chat-message">'+ data[y].name +" : "+ data[y].message +'</div>'))
+        //                     y--;                           
+                        }
+                       
+                    }
+                });
+
+                textarea.keydown(()=>{
+                    if(event.which===13 && event.shiftKey ==false){
+                        socket.emit('input',{
+                            name:username.val(),
+                            message:textarea.val()
+                        })
+                        textarea.val("");
+                    }
+                })
+
+                //clear
+                 clear.click(()=>{
+                     socket.emit('clear',function(){
+                     });
+                 })
+
+                 socket.on('cleared',function(){
+                     messagesJ.textContent="";
+                 })
+            }
+
+        })();
+    </script>
+</body>
+</html>
